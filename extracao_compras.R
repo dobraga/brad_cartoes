@@ -41,10 +41,15 @@ extrai.compras = function(limit.stop = 10){
     }
   }
   
+  Sys.sleep(.5)
+  
   ses$findElement(xpath = '//*[@id="search-button"]')$click()
   ses$findElement(xpath = '//*[@id="search-bar"]')$sendKeys("27888")
   
+  Sys.sleep(.5)
+  
   verif = NA
+  
   
   while(verif != "27888" | is.na(verif)){ # MELHORAR ESSA PARTE
     verif = ses$getSource() %>% 
@@ -85,8 +90,7 @@ extrai.compras = function(limit.stop = 10){
 
   final.cartao = str_sub(compras,51,54) %>% as.numeric()
   
-  data.compra = as.POSIXct(str_sub(compras,59,74),
-                           format = '%d/%m/%Y %H:%M')
+  data.compra = lubridate::dmy_hm(str_sub(compras,59,74))
   
   
   aux = str_locate(compras,"VALOR DE R")

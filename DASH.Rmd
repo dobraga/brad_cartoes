@@ -8,48 +8,74 @@ runtime: shiny
 library(flexdashboard)
 library(shiny)
 library(dplyr)
+library(ggplot2)
 source("extracao_compras.r")
-
-base = readRDS("exemplo_gastos.rds")
-
-dataset <- reactive({base})
 ```
 
-Column {.sidebar data-width=550}
+Column {.sidebar data-width=520}
 -----------------------------------------------------------------------
 
 ```{r}
-dateRangeInput("dates", 
-               label = h3("Datas para análise"),
-               min = min(base$data.compra),
-               max = max(base$data.compra),
-               start = min(base$data.compra),
-               end = max(base$data.compra))
+textInput('username', 'User', placeholder = 'Usuário')
+passwordInput('password', 'Password', placeholder = '***')
+actionButton("loga", "Login")
 
-x<-reactive({input$dates[2]})
+#observeEvent(input$loga,{
+#  print("rodando")
 
-renderTable({
-  if(is.na(x())){
-    dataset() %>% 
-      filter(data.compra >= input$dates[1]) %>% 
-      mutate(final.cartao = round(final.cartao,0)) %>% 
-      `colnames<-`(c("Final","Data","Valor","Estabelecimento","Tag"))
-    
-  }else{
+  #base = extrai.compras()
+
+  base = readRDS("exemplo_gastos.rds")
+  
+  dataset <- reactive({base})
+  
+  dateRangeInput("dates", 
+                 label = h3("Datas para análise"),
+                 min = min(base$data.compra),
+                 max = max(base$data.compra),
+                 start = min(base$data.compra),
+                 end = max(base$data.compra))
+  
+  x<-reactive({input$dates[2]})
+  
+  renderTable({
+
+    if(is.na(x())){
       dataset() %>% 
-        filter(data.compra >= input$dates[1], 
-               data.compra <= input$dates[2]) %>% 
-        mutate(final.cartao = round(final.cartao,0)) %>% 
-        `colnames<-`(c("Final","Data","Valor","Estabelecimento","Tag"))
-}
-})
+        filter(data.compra >= input$dates[1]) %>% 
+        mutate(data.compra = as.character(format(data.compra,"%d/%m/%y %H:%m"))) %>% 
+        `colnames<-`(c("Final","Data","Valor","Estabelecimento","Tag")) %>% 
+        select(-"Final")
+      
+    }else{
+        dataset() %>% 
+          filter(data.compra >= input$dates[1], 
+                 data.compra <= input$dates[2]) %>% 
+          mutate(data.compra = as.character(format(data.compra,"%d/%m/%y %H:%m"))) %>% 
+          `colnames<-`(c("Final","Data","Valor","Estabelecimento","Tag")) %>% 
+          select(-"Final")
+  }
+  })
+#})
 ```
 
 Column
 -----------------------------------------------------------------------
 
-### Chart A
+## Teste gráfico
 
 ```{r}
-
+renderPlot({
+    if(is.na(x())){
+        dataset() %>% 
+        filter(data.compra >= input$dates[1])%>% ggplot(aes(x=valor)) + geom_histogram()
+      
+    }else{
+        dataset() %>% 
+          filter(data.compra >= input$dates[1], 
+                 data.compra <= input$dates[2]) %>% ggplot(aes(x=valor)) + geom_histogram()
+    }
+  
+})
 ```
+
